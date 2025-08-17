@@ -10,7 +10,7 @@ bucket = "telco-churn-prediction-bucket"
 sklearn_processor = SKLearnProcessor(
     framework_version="1.2-1",  # Change if needed
     role=role,
-    instance_type="ml.m5.large",
+    instance_type="ml.t3.medium",
     instance_count=1,
     base_job_name="telco-preprocessing",
 )
