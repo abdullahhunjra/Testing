@@ -2,7 +2,7 @@ import sagemaker
 from sagemaker.sklearn.estimator import SKLearn
 from datetime import datetime
 
-role = "arn:aws:iam::<your-account-id>:role/<your-sagemaker-execution-role>"
+role = "arn:aws:iam::755283537318:role/telco-sagemaker-role"
 bucket = "telco-churn-prediction-bucket"
 entry_point_script = "scripts/train.py"
 
