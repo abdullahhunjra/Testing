@@ -104,3 +104,6 @@ with open("/tmp/scaler_index.json", "w") as f:
 s3.upload_file("/tmp/scaler_index.json", BUCKET, ART_PREFIX + "scaler_index.json")
 
 print("Preprocessing complete. Data, artifacts, and selected features uploaded to S3.")
+
+
+# End here
