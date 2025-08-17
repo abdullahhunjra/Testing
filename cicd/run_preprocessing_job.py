@@ -25,7 +25,7 @@ sklearn_processor.run(
         ProcessingOutput(source="/opt/ml/processing/artifacts", destination=f"s3://{bucket}/telco-model-artifacts"),
     ],
 )
-
+# Wait for the job to complete
 
 
 
