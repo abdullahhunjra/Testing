@@ -16,7 +16,7 @@ sklearn_estimator = SKLearn(
     instance_type="ml.m5.large",
     framework_version="0.23-1",
     py_version="py3",
-    dependencies=["requirements.txt"],   # also relative to source_dir
+    dependencies=["../requirements.txt"],     
 )
 # ---------- Run Training Job ----------
 
