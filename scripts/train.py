@@ -25,9 +25,9 @@ s3 = boto3.client("s3")
 # ---------- Load Data ----------
 def load_csv(key):
     obj = s3.get_object(Bucket=BUCKET, Key=key)
-    #return pd.read_csv(obj["Body"])
-    df = pd.read_csv(obj["Body"])
-    return df.head(int(len(df) * 0.1))
+    return pd.read_csv(obj["Body"])
+    #df = pd.read_csv(obj["Body"])
+    #return df.head(int(len(df) * 0.1))
 
 X_train = load_csv(PROC_PREFIX + "X_train.csv")
 y_train = load_csv(PROC_PREFIX + "y_train.csv").values.ravel()
