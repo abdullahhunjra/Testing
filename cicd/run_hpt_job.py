@@ -42,8 +42,7 @@ tuner = HyperparameterTuner(
     max_parallel_jobs=2,
     objective_type="Maximize"
 )
+tuner.fit(job_name="telco-hpt-logreg-01")
 
-job_name = f"telco-hpt-logreg-{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}"
-tuner.fit(job_name=job_name)
 
 print("✅ Launched HPT job:", job_name)
