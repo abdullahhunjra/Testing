@@ -60,7 +60,7 @@ for name, model in models.items():
     s3.upload_file(f"/tmp/{name}_all.pkl", BUCKET, f"{MODEL_PREFIX}{name}_all.pkl")
 
     # ---- Load Selected Features for This Model ----
-    feature_key = f"{FEATURES_PREFIX}/selected_features_{name}.json"
+    feature_key = f"{FEATURES_PREFIX}/{name}_selected_features.json"
     try:
         obj = s3.get_object(Bucket=BUCKET, Key=feature_key)
         model_features = json.loads(obj["Body"].read().decode("utf-8"))
