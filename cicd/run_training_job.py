@@ -4,7 +4,7 @@ from datetime import datetime
 
 role = "arn:aws:iam::755283537318:role/telco-sagemaker-role"
 bucket = "telco-churn-prediction-bucket"
-entry_point_script = "scripts/train.py"
+entry_point_script = "train.py"
 
 timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 job_name = f"telco-training-{timestamp}"
