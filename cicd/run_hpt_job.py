@@ -1,5 +1,3 @@
-# cicd/run_hpt_job.py
-
 import os
 from datetime import datetime
 from sagemaker import Session
@@ -9,8 +7,14 @@ from sagemaker.tuner import HyperparameterTuner, ContinuousParameter, Categorica
 # ✅ Replace this with your actual SageMaker execution role ARN
 role = "arn:aws:iam::755283537318:role/telco-sagemaker-role"
 
+# Initialize SageMaker session
 session = Session()
 
+# Dynamic job name
+timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+job_name = f"telco-hpt-logreg-{timestamp}"
+
+# SKLearn Estimator
 estimator = SKLearn(
     entry_point="hpt_logistic_regression.py",
     source_dir="scripts",
@@ -23,16 +27,22 @@ estimator = SKLearn(
     sagemaker_session=session
 )
 
+# Hyperparameter search space
 hyperparameter_ranges = {
     "C": ContinuousParameter(0.01, 10.0),
     "penalty": CategoricalParameter(["l1", "l2"]),
     "solver": CategoricalParameter(["liblinear", "lbfgs", "saga"])
 }
 
+# Extract f1-score for class "1" from printed JSON
 metric_definitions = [
-    {"Name": "f1-score", "Regex": '"f1-score":\\s*([0-9\\.]+)'}
+    {
+        "Name": "f1-score",
+        "Regex": '"1"\\s*:\\s*{[^}]*"f1-score"\\s*:\\s*([0-9\\.]+)'
+    }
 ]
 
+# Hyperparameter tuner
 tuner = HyperparameterTuner(
     estimator=estimator,
     objective_metric_name="f1-score",
@@ -42,8 +52,8 @@ tuner = HyperparameterTuner(
     max_parallel_jobs=2,
     objective_type="Maximize"
 )
-tuner.fit(job_name="telco-hpt-logreg-01")
 
+# Launch tuning job
+tuner.fit(job_name=job_name)
 
-print("✅ Launched HPT job: telco-hpt-logreg-01")
-
+print(f"✅ Launched HPT job: {job_name}")
