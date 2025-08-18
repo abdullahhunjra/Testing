@@ -50,21 +50,21 @@ for name, model in models.items():
     print(f"\n📦 Training model: {name}")
 
     # ---- All Features ----
-    model.fit(X_train, y_train)
-    preds = model.predict(X_test)
-    report = classification_report(y_test, preds, output_dict=True)
-    results[name + "_all"] = report
-    recall_scores[name + "_all"] = report["1"]["recall"]
+    #model.fit(X_train, y_train)
+    #preds = model.predict(X_test)
+    #report = classification_report(y_test, preds, output_dict=True)
+    #results[name + "_all"] = report
+   # recall_scores[name + "_all"] = report["1"]["recall"]
 
-    joblib.dump(model, f"/tmp/{name}_all.pkl")
-    s3.upload_file(f"/tmp/{name}_all.pkl", BUCKET, f"{MODEL_PREFIX}{name}_all.pkl")
+    #joblib.dump(model, f"/tmp/{name}_all.pkl")
+    #s3.upload_file(f"/tmp/{name}_all.pkl", BUCKET, f"{MODEL_PREFIX}{name}_all.pkl")
 
     # ---- Load Selected Features for This Model ----
 
     feature_key = f"{FEATURES_PREFIX}/{name}_selected_features.json"
     print(f"🔍 Loading selected features for {name} from S3: {feature_key}")
    
-   
+
     try:
         obj = s3.get_object(Bucket=BUCKET, Key=feature_key)
         model_features = json.loads(obj["Body"].read().decode("utf-8"))
