@@ -10,7 +10,7 @@ job_name = f"telco-training-{timestamp}"
 
 sklearn_estimator = SKLearn(
     entry_point="train.py",              # this means: scripts/train.py
-    source_dir="scripts",                # folder where train.py is
+    source_dir="scripts/",                # folder where train.py is
     role=role,
     instance_count=1,
     instance_type="ml.m5.large",
