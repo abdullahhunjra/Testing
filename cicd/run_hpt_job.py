@@ -45,4 +45,5 @@ tuner = HyperparameterTuner(
 tuner.fit(job_name="telco-hpt-logreg-01")
 
 
-print("✅ Launched HPT job:", job_name)
+print("✅ Launched HPT job: telco-hpt-logreg-01")
+
