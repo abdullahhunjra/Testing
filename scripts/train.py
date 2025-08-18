@@ -26,18 +26,15 @@ s3 = boto3.client("s3")
 def load_csv(key):
     obj = s3.get_object(Bucket=BUCKET, Key=key)
     return pd.read_csv(obj["Body"])
-    #df = pd.read_csv(obj["Body"])
-    #return df.head(int(len(df) * 0.1))
 
 X_train = load_csv(PROC_PREFIX + "X_train.csv")
 y_train = load_csv(PROC_PREFIX + "y_train.csv").values.ravel()
 X_test = load_csv(PROC_PREFIX + "X_test.csv")
 y_test = load_csv(PROC_PREFIX + "y_test.csv").values.ravel()
 
-# ---------- Load Selected Features ----------
+# ---------- Load Selected Features (list) ----------
 obj = s3.get_object(Bucket=BUCKET, Key=ART_PREFIX + "selected_features.json")
 selected_features = json.loads(obj["Body"].read().decode("utf-8"))
-
 
 # ---------- Models ----------
 models = {
@@ -66,9 +63,8 @@ for name, model in models.items():
     s3.upload_file(f"/tmp/{name}_all.pkl", BUCKET, f"{MODEL_PREFIX}{name}_all.pkl")
 
     # ---- Selected Features ----
-    sel_cols = selected_features[name]
-    model.fit(X_train[sel_cols], y_train)
-    preds_sel = model.predict(X_test[sel_cols])
+    model.fit(X_train[selected_features], y_train)
+    preds_sel = model.predict(X_test[selected_features])
     report_sel = classification_report(y_test, preds_sel, output_dict=True)
     results[name + "_selected"] = report_sel
     recall_scores[name + "_selected"] = report_sel["1"]["recall"]
