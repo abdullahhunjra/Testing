@@ -61,7 +61,7 @@ for name, model in models.items():
 
     # ---- Load Selected Features for This Model ----
 
-    feature_key = f"{FEATURES_PREFIX}/{name}_selected_features.json"
+    feature_key = f"{FEATURES_PREFIX}{name}_selected_features.json"
     print(f"🔍 Loading selected features for {name} from S3: {feature_key}")
    
 
