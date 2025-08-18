@@ -36,7 +36,8 @@ y_test = load_csv(PROC_PREFIX + "y_test.csv").values.ravel()
 
 # ---------- Load Selected Features ----------
 obj = s3.get_object(Bucket=BUCKET, Key=ART_PREFIX + "selected_features.json")
-selected_features = json.load(obj)
+selected_features = json.loads(obj["Body"].read().decode("utf-8"))
+
 
 # ---------- Models ----------
 models = {
