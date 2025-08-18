@@ -15,10 +15,12 @@ sklearn_estimator = SKLearn(
     instance_type="ml.m5.large",
     framework_version="0.23-1",
     base_job_name="telco-train",
-    source_dir=".",
+    source_dir="scripts",
     output_path=f"s3://{bucket}/telco-trained-models/",
+    dependencies=["requirements.txt"],
     sagemaker_session=sagemaker.Session(),
 )
+
 
 sklearn_estimator.fit(job_name=job_name)
 
