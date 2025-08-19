@@ -41,15 +41,17 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42
 )
 
-# 5. Balance training set
-train_df = pd.concat([X_train, y_train], axis=1)
-majority = train_df[train_df.Churn == "No"]
-minority = train_df[train_df.Churn == "Yes"]
-majority_downsampled = resample(
-    majority, replace=False, n_samples=len(minority), random_state=42
-)
-train_balanced = pd.concat([majority_downsampled, minority])
-X_train, y_train = train_balanced.drop("Churn", axis=1), train_balanced["Churn"]
+# 5. Balance training set (undersampling) — commented out
+# Uncomment this block if you want to use undersampling instead of class weights
+
+# train_df = pd.concat([X_train, y_train], axis=1)
+# majority = train_df[train_df.Churn == "No"]
+# minority = train_df[train_df.Churn == "Yes"]
+# majority_downsampled = resample(
+#     majority, replace=False, n_samples=len(minority), random_state=42
+# )
+# train_balanced = pd.concat([majority_downsampled, minority])
+# X_train, y_train = train_balanced.drop("Churn", axis=1), train_balanced["Churn"]
 
 # 6. Encode categorical
 encoders = {}
@@ -104,6 +106,3 @@ with open("/tmp/scaler_index.json", "w") as f:
 s3.upload_file("/tmp/scaler_index.json", BUCKET, ART_PREFIX + "scaler_index.json")
 
 print("Preprocessing complete. Data, artifacts, and selected features uploaded to S3.")
-
-
-# End here
