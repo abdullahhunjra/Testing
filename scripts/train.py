@@ -21,7 +21,7 @@ FEATURES_PREFIX = "selected_k_best_features/"
 os.makedirs("/tmp", exist_ok=True)
 s3 = boto3.client("s3")
 
-# ---------- Load Data ----------
+# ---------- Load Data ------------
 def load_csv(key):
     obj = s3.get_object(Bucket=BUCKET, Key=key)
     return pd.read_csv(obj["Body"])
