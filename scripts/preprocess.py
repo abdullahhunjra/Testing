@@ -15,7 +15,7 @@ ART_PREFIX = "telco-model-artifacts/"
 s3 = boto3.client("s3")
 
 # 1. Download raw data from S3
-print("Downloading raw data from S3...")
+print("📥 Downloading raw data from S3...")
 obj = s3.get_object(Bucket=BUCKET, Key=RAW_KEY)
 df = pd.read_csv(obj["Body"])
 
@@ -26,14 +26,14 @@ df = df.drop("customerID", axis=1, errors="ignore").drop_duplicates()
 df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
 df.dropna(subset=["TotalCharges"], inplace=True)
 
-# Define cols
+# Define column groups
 cat_cols = [
-    "gender","Partner","Dependents","PhoneService","MultipleLines",
-    "InternetService","OnlineSecurity","OnlineBackup","DeviceProtection",
-    "TechSupport","StreamingTV","StreamingMovies","Contract",
-    "PaperlessBilling","PaymentMethod"
+    "gender", "Partner", "Dependents", "PhoneService", "MultipleLines",
+    "InternetService", "OnlineSecurity", "OnlineBackup", "DeviceProtection",
+    "TechSupport", "StreamingTV", "StreamingMovies", "Contract",
+    "PaperlessBilling", "PaymentMethod"
 ]
-num_cols = ["tenure","MonthlyCharges","TotalCharges","SeniorCitizen"]
+num_cols = ["tenure", "MonthlyCharges", "TotalCharges", "SeniorCitizen"]
 
 # 4. Split train/test
 X, y = df.drop("Churn", axis=1), df["Churn"]
@@ -41,19 +41,19 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42
 )
 
-# 5. Balance training set (undersampling) — commented out
-# Uncomment this block if you want to use undersampling instead of class weights
-
-# train_df = pd.concat([X_train, y_train], axis=1)
-# majority = train_df[train_df.Churn == "No"]
-# minority = train_df[train_df.Churn == "Yes"]
-# majority_downsampled = resample(
-#     majority, replace=False, n_samples=len(minority), random_state=42
-# )
-# train_balanced = pd.concat([majority_downsampled, minority])
-# X_train, y_train = train_balanced.drop("Churn", axis=1), train_balanced["Churn"]
+# 5. ✅ Balance training set (Undersampling)
+print("🔄 Applying undersampling to balance the dataset...")
+train_df = pd.concat([X_train, y_train], axis=1)
+majority = train_df[train_df.Churn == "No"]
+minority = train_df[train_df.Churn == "Yes"]
+majority_downsampled = resample(
+    majority, replace=False, n_samples=len(minority), random_state=42
+)
+train_balanced = pd.concat([majority_downsampled, minority])
+X_train, y_train = train_balanced.drop("Churn", axis=1), train_balanced["Churn"]
 
 # 6. Encode categorical
+print("🔤 Encoding categorical variables...")
 encoders = {}
 for col in cat_cols:
     le = LabelEncoder()
@@ -62,10 +62,12 @@ for col in cat_cols:
     X_test[col] = le.transform(X_test[col])
     encoders[col] = le
 
+# Encode target
 y_train = y_train.map({"No": 0, "Yes": 1})
 y_test = y_test.map({"No": 0, "Yes": 1})
 
 # 7. Scale numeric
+print("📏 Scaling numeric features...")
 scaler_index = {}
 for col in num_cols:
     sc = StandardScaler()
@@ -76,6 +78,7 @@ for col in num_cols:
     scaler_index[col] = f"{col}_scaler.pkl"
 
 # 8. Feature Selection (SelectKBest)
+print("📊 Selecting best features with SelectKBest...")
 selector = SelectKBest(score_func=mutual_info_classif, k=10)
 selector.fit(X_train, y_train)
 selected_features = X_train.columns[selector.get_support()].tolist()
@@ -84,7 +87,7 @@ with open("/tmp/selected_features.json", "w") as f:
     json.dump(selected_features, f)
 s3.upload_file("/tmp/selected_features.json", BUCKET, ART_PREFIX + "selected_features.json")
 
-print("Selected features:", selected_features)
+print("✅ Selected features:", selected_features)
 
 # 9. Save processed splits to CSV (upload to S3)
 def upload_df(df, key):
@@ -98,6 +101,7 @@ upload_df(X_test, PROC_PREFIX + "X_test.csv")
 upload_df(y_test.to_frame(), PROC_PREFIX + "y_test.csv")
 
 # 10. Save encoders + metadata
+print("💾 Saving encoders and scalers...")
 joblib.dump(encoders, "/tmp/label_encoders.pkl")
 s3.upload_file("/tmp/label_encoders.pkl", BUCKET, ART_PREFIX + "label_encoders.pkl")
 
@@ -105,4 +109,4 @@ with open("/tmp/scaler_index.json", "w") as f:
     json.dump(scaler_index, f)
 s3.upload_file("/tmp/scaler_index.json", BUCKET, ART_PREFIX + "scaler_index.json")
 
-print("Preprocessing complete. Data, artifacts, and selected features uploaded to S3.")
+print("✅ Preprocessing complete. Data, artifacts, and selected features uploaded to S3.")
