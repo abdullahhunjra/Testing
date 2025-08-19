@@ -19,38 +19,62 @@ print("📥 Downloading raw data from S3...")
 obj = s3.get_object(Bucket=BUCKET, Key=RAW_KEY)
 df = pd.read_csv(obj["Body"])
 
+
+# We have changes datatype of 'TotalCharges' to numeric
+df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
+
+# SeniorCitizen is a binary feature, we can map it to Yes/No for better readability
+df['SeniorCitizen'] = df['SeniorCitizen'].map({1: 'Yes', 0: 'No'})
+
+
+
+# Minority: customers who churned ('Yes')
+minority_class = df[df['Churn'] == 'Yes']   # 1869 rows
+majority_class = df[df['Churn'] == 'No']    # 5174 rows
+
+# Downsample majority class to match minority class
+majority_downsampled = resample(
+    majority_class,
+    replace=False,
+    n_samples=len(minority_class),  # 1869
+    random_state=42
+)
+
+# Combine into a balanced DataFrame
+df_balanced = pd.concat([minority_class, majority_downsampled])
+df= df_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
+
+# Confirm new balance
+print(df['Churn'].value_counts())
+
+
+
+
+
+
 # 2. Drop customerID & duplicates
 df = df.drop("customerID", axis=1, errors="ignore").drop_duplicates()
 
-# 3. Convert TotalCharges to numeric & drop nulls
-df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
-df.dropna(subset=["TotalCharges"], inplace=True)
 
-# Define column groups
-cat_cols = [
-    "gender", "Partner", "Dependents", "PhoneService", "MultipleLines",
-    "InternetService", "OnlineSecurity", "OnlineBackup", "DeviceProtection",
-    "TechSupport", "StreamingTV", "StreamingMovies", "Contract",
-    "PaperlessBilling", "PaymentMethod"
-]
-num_cols = ["tenure", "MonthlyCharges", "TotalCharges", "SeniorCitizen"]
 
-# 4. Split train/test
-X, y = df.drop("Churn", axis=1), df["Churn"]
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, stratify=y, random_state=42
-)
+cat_cols = ['gender', 'SeniorCitizen','Partner', 'Dependents', 'PhoneService', 'MultipleLines',
+       'InternetService', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection',
+       'TechSupport', 'StreamingTV', 'StreamingMovies', 'Contract',
+       'PaperlessBilling', 'PaymentMethod']
 
-# 5. ✅ Balance training set (Undersampling)
-print("🔄 Applying undersampling to balance the dataset...")
-train_df = pd.concat([X_train, y_train], axis=1)
-majority = train_df[train_df.Churn == "No"]
-minority = train_df[train_df.Churn == "Yes"]
-majority_downsampled = resample(
-    majority, replace=False, n_samples=len(minority), random_state=42
-)
-train_balanced = pd.concat([majority_downsampled, minority])
-X_train, y_train = train_balanced.drop("Churn", axis=1), train_balanced["Churn"]
+num_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
+
+df = df.drop_duplicates()
+
+df.dropna(subset=['TotalCharges'], inplace=True)
+
+X= df.drop(['Churn'],axis=1)
+y = df['Churn']
+
+X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.2, random_state=42)
+
+
+
 
 # 6. Encode categorical
 print("🔤 Encoding categorical variables...")
@@ -65,6 +89,11 @@ for col in cat_cols:
 # Encode target
 y_train = y_train.map({"No": 0, "Yes": 1})
 y_test = y_test.map({"No": 0, "Yes": 1})
+
+
+
+
+
 
 # 7. Scale numeric
 print("📏 Scaling numeric features...")
