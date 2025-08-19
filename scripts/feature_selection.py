@@ -36,7 +36,7 @@ models = {
     "XGBoost": XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
 }
 
-# ---------- Feature Selection ----------
+# ---------- Feature Selection -------------
 for name, model in models.items():
     print(f"\n🔍 Evaluating features for: {name}")
     
