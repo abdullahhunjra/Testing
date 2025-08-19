@@ -1,5 +1,6 @@
 import os
 import json
+import joblib
 import boto3
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -17,7 +18,6 @@ from sklearn.metrics import (
 # ---------- CONFIG ----------
 BUCKET = "telco-churn-prediction-bucket"
 PROC_PREFIX = "telco-processed-data/"
-FEATURES_PREFIX = "selected_k_best_features/"
 RESULTS_PREFIX = "telco-hpt-results/"
 
 os.makedirs("/tmp", exist_ok=True)
@@ -32,18 +32,6 @@ X_train = load_csv(PROC_PREFIX + "X_train.csv")
 y_train = load_csv(PROC_PREFIX + "y_train.csv").values.ravel()
 X_test = load_csv(PROC_PREFIX + "X_test.csv")
 y_test = load_csv(PROC_PREFIX + "y_test.csv").values.ravel()
-
-# ---------- Load Selected Features for Logistic Regression ----------
-feature_key = f"{FEATURES_PREFIX}LogisticRegression_selected_features.json"
-try:
-    obj = s3.get_object(Bucket=BUCKET, Key=feature_key)
-    features = json.loads(obj["Body"].read().decode("utf-8"))
-except s3.exceptions.NoSuchKey:
-    raise FileNotFoundError(f"❌ Selected feature file not found at {feature_key}")
-
-# Subset features
-X_train = X_train[features]
-X_test = X_test[features]
 
 # ---------- Hyperparameters from Environment ----------
 penalty = os.environ.get("penalty", "l2")
@@ -63,9 +51,12 @@ acc = accuracy_score(y_test, preds)
 prec = precision_score(y_test, preds)
 rec = recall_score(y_test, preds)
 f1 = f1_score(y_test, preds)
-cm = confusion_matrix(y_test, preds).tolist()  # convert numpy to list for JSON
+cm = confusion_matrix(y_test, preds).tolist()
 
-# Log in CloudWatch
+# ✅ REQUIRED: emit metric in exact format for SageMaker
+print(f'"1" : {{"f1-score": {f1:.4f}}}')  # <- must match regex in runner
+
+# ---------- Logs ----------
 print("\n📊 Classification Report:")
 print(json.dumps(report, indent=4))
 print(f"✅ Accuracy: {acc:.4f}")
@@ -74,7 +65,7 @@ print(f"✅ Recall: {rec:.4f}")
 print(f"✅ F1 Score: {f1:.4f}")
 print(f"✅ Confusion Matrix: {cm}")
 
-# ---------- Save Results ----------
+# ---------- Save Metrics JSON ----------
 metrics_output = {
     "accuracy": acc,
     "precision": prec,
@@ -84,18 +75,35 @@ metrics_output = {
     "full_classification_report": report
 }
 
-# Save metrics JSON
-metrics_path = "/tmp/hpt_metrics.json"
-with open(metrics_path, "w") as f:
+with open("/tmp/hpt_metrics.json", "w") as f:
     json.dump(metrics_output, f, indent=4)
-s3.upload_file(metrics_path, BUCKET, RESULTS_PREFIX + "hpt_metrics.json")
 
-# ---------- Save Bar Plot (Precision, Recall, F1) ----------
+s3.upload_file("/tmp/hpt_metrics.json", BUCKET, RESULTS_PREFIX + "hpt_metrics.json")
+
+# ---------- Save Metrics TXT ----------
+with open("/tmp/hpt_metrics.txt", "w") as f:
+    f.write("📊 Logistic Regression HPT Metrics (All Features)\n")
+    f.write(f"Penalty: {penalty}, C: {C}, Solver: {solver}\n\n")
+    f.write(f"Accuracy: {acc:.4f}\n")
+    f.write(f"Precision: {prec:.4f}\n")
+    f.write(f"Recall: {rec:.4f}\n")
+    f.write(f"F1 Score: {f1:.4f}\n")
+    f.write(f"Confusion Matrix: {cm}\n\n")
+    f.write(json.dumps(report, indent=4))
+
+s3.upload_file("/tmp/hpt_metrics.txt", BUCKET, RESULTS_PREFIX + "hpt_metrics.txt")
+
+# ---------- Save Model ----------
+model_path = "/tmp/hpt_logistic_regression.pkl"
+joblib.dump(model, model_path)
+s3.upload_file(model_path, BUCKET, RESULTS_PREFIX + "hpt_logistic_regression.pkl")
+
+# ---------- Save Bar Plot ----------
 plt.figure(figsize=(6, 4))
 bars = plt.bar(["Precision", "Recall", "F1 Score"], [prec, rec, f1], color="skyblue")
 for bar, val in zip(bars, [prec, rec, f1]):
     plt.text(bar.get_x() + bar.get_width()/2, val + 0.01, f"{val:.2f}", ha='center', va='bottom')
-plt.title("Logistic Regression (Selected Features) - HPT Metrics (Class 1)")
+plt.title("Logistic Regression (All Features) - HPT Metrics")
 plt.ylim(0, 1.05)
 plt.tight_layout()
 bar_plot_path = "/tmp/hpt_plot.png"

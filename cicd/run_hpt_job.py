@@ -4,10 +4,10 @@ from sagemaker import Session
 from sagemaker.sklearn.estimator import SKLearn
 from sagemaker.tuner import HyperparameterTuner, ContinuousParameter, CategoricalParameter
 
-# ✅ Replace this with your actual SageMaker execution role ARN
+# ✅ Your SageMaker execution role
 role = "arn:aws:iam::755283537318:role/telco-sagemaker-role"
 
-# Initialize SageMaker session
+# SageMaker session
 session = Session()
 
 # Dynamic job name
@@ -34,11 +34,11 @@ hyperparameter_ranges = {
     "solver": CategoricalParameter(["liblinear", "lbfgs", "saga"])
 }
 
-# Extract f1-score for class "1" from printed JSON
+# ✅ Metric regex must match: '"1" : {"f1-score": 0.8421}'
 metric_definitions = [
     {
         "Name": "f1-score",
-        "Regex": '"1"\\s*:\\s*{[^}]*"f1-score"\\s*:\\s*([0-9\\.]+)'
+        "Regex": r'"1"\s*:\s*{[^}]*"f1-score"\s*:\s*([0-9\.]+)'
     }
 ]
 
@@ -53,9 +53,7 @@ tuner = HyperparameterTuner(
     objective_type="Maximize"
 )
 
-# Launch tuning job
+# Launch HPT job
 tuner.fit(job_name=job_name)
 
 print(f"✅ Launched HPT job: {job_name}")
-
-#
