@@ -52,7 +52,7 @@ print(df['Churn'].value_counts())
 
 
 
-# 2. Drop customerID & duplicates
+# Drop customerID & duplicates
 df = df.drop("customerID", axis=1, errors="ignore").drop_duplicates()
 
 
@@ -76,7 +76,7 @@ X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.2, random_s
 
 
 
-# 6. Encode categorical
+# Encode categorical
 print("🔤 Encoding categorical variables...")
 encoders = {}
 for col in cat_cols:
@@ -95,7 +95,7 @@ y_test = y_test.map({"No": 0, "Yes": 1})
 
 
 
-# 7. Scale numeric
+# Scale numeric
 print("📏 Scaling numeric features...")
 scaler_index = {}
 for col in num_cols:
@@ -106,19 +106,8 @@ for col in num_cols:
     s3.upload_file(f"/tmp/{col}_scaler.pkl", BUCKET, ART_PREFIX + f"{col}_scaler.pkl")
     scaler_index[col] = f"{col}_scaler.pkl"
 
-# 8. Feature Selection (SelectKBest)
-print("📊 Selecting best features with SelectKBest...")
-selector = SelectKBest(score_func=mutual_info_classif, k=10)
-selector.fit(X_train, y_train)
-selected_features = X_train.columns[selector.get_support()].tolist()
 
-with open("/tmp/selected_features.json", "w") as f:
-    json.dump(selected_features, f)
-s3.upload_file("/tmp/selected_features.json", BUCKET, ART_PREFIX + "selected_features.json")
-
-print("✅ Selected features:", selected_features)
-
-# 9. Save processed splits to CSV (upload to S3)
+# Save processed splits to CSV (upload to S3)
 def upload_df(df, key):
     csv_buffer = StringIO()
     df.to_csv(csv_buffer, index=False)
@@ -129,7 +118,7 @@ upload_df(y_train.to_frame(), PROC_PREFIX + "y_train.csv")
 upload_df(X_test, PROC_PREFIX + "X_test.csv")
 upload_df(y_test.to_frame(), PROC_PREFIX + "y_test.csv")
 
-# 10. Save encoders + metadata
+# Save encoders + metadata
 print("💾 Saving encoders and scalers...")
 joblib.dump(encoders, "/tmp/label_encoders.pkl")
 s3.upload_file("/tmp/label_encoders.pkl", BUCKET, ART_PREFIX + "label_encoders.pkl")
