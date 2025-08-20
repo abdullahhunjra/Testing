@@ -1,8 +1,7 @@
+fastapi
+uvicorn
+pandas
 boto3
-sagemaker
 scikit-learn
-matplotlib
-xgboost
-lightgbm
 joblib
-seaborn
+pydantic
