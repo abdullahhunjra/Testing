@@ -26,13 +26,14 @@ model = None
 encoders = None
 tenure_scaler = None
 
-# --------------- Pydantic Schema -----------------
+# --------------- Pydantic Schema -------------------
 class CustomerFeatures(BaseModel):
     tenure: float
     InternetService: str
     OnlineSecurity: str
     TechSupport: str
     Contract: str
+
 
 @app.get("/")
 def health_check():
