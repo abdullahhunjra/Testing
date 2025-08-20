@@ -34,6 +34,11 @@ class CustomerFeatures(BaseModel):
     TechSupport: str
     Contract: str
 
+@app.get("/")
+def health_check():
+    return {"message": "API is healthy"}
+
+
 # --------------- S3 Downloads -----------------
 def download_from_s3(s3_key, local_path):
     s3.download_file(BUCKET, s3_key, local_path)
